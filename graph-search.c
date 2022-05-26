@@ -13,7 +13,7 @@ typedef struct node {
 } Node;
 
 typedef struct edge {
-    struct node* nodeAddress;
+    struct node* toNodeAddress;
     struct edge* nextEdge;
     // int weight;
 } Edge;
@@ -24,7 +24,7 @@ void InsertVertex();
 void InsertEdge();
 int DFS();
 int BFS();
-void PrintGraph();
+void PrintGraph(Node*, int);
 void FreeGraph(Node*);
 
 
@@ -65,7 +65,7 @@ int main() {
             break;
         case 'v':
         case 'V':
-            if (countVertices == 9) {
+            if (countVertices == 10) {
                 printf("!! The graph is full. !!\n");
                 break;
             }
@@ -82,11 +82,11 @@ int main() {
             break;
         case 'b':
         case 'B':
-            BFS;
+            BFS();
             break;
         case 'p':
         case 'P':
-            PrintGraph();
+            PrintGraph(graph, countVertices);
             break;
         case 'q':
         case 'Q':
@@ -124,12 +124,13 @@ void InsertVertex(Node* graph, int index) {
 void InsertEdge(Node* graph) {
     int node1, node2;
     Edge* newEdge1,* newEdge2;
-    Edge* lastLink;
-
+    Edge* ptr;
     int i;
 
-    printf("INPUT two nodes to be connected (0 ~ 9) : \n");
+
+    printf("INPUT two nodes to be connected (0 ~ 9) : ");
     scanf("%d %d", &node1, &node2);
+
 
     if (((node1 < 0) || (node1 > 9)) || ((node2 < 0) || (node2 > 9))) {
         printf("!! Wrong Input. Please input 2 numbers ranged 0 ~ 9. !!\n");
@@ -141,14 +142,41 @@ void InsertEdge(Node* graph) {
         return;
     }
 
-    newEdge1->nodeAddress = &graph[node1];
+    newEdge1 = (Edge*) malloc(sizeof(Edge));
+    newEdge1->toNodeAddress = &graph[node2];
     newEdge1->nextEdge = NULL;
 
-    newEdge2->nodeAddress = &graph[node2];
+
+    newEdge2 = (Edge*) malloc(sizeof(Edge));
+    newEdge2->toNodeAddress = &graph[node1];
     newEdge2->nextEdge = NULL;
 
-    
 
+    if (graph[node1].firstEdge == NULL) {
+        graph[node1].firstEdge = newEdge1;
+    }
+    else {
+        ptr = graph[node1].firstEdge;
+        while (ptr != NULL) {
+            if (ptr->toNodeAddress->index == node2) {
+                printf("!! The edge already exits. !!\n");
+                return;
+            }
+            ptr = ptr->nextEdge;
+        }
+        ptr->nextEdge = newEdge1;
+    }
+
+    if (graph[node2].firstEdge == NULL) {
+        graph[node2].firstEdge = newEdge2;
+    }
+    else {
+        ptr = graph[node2].firstEdge;
+        while (ptr != NULL) {
+            ptr = ptr->nextEdge;
+        }
+        ptr->nextEdge = newEdge2;
+    }
 };
 
 int DFS() {
@@ -159,8 +187,20 @@ int BFS() {
 
 };
 
-void PrintGraph() {
+void PrintGraph(Node* graph, int count) {
+    int i;
+    Edge* edge_ptr;
 
+    printf("--- Printing graph in Adjacent List representation.\n\n");
+    for (i = 0; i < count; i++) {
+        printf("[ %2d ]", graph[i].index);
+        edge_ptr = graph[i].firstEdge;
+        while (edge_ptr != NULL) {
+            printf(" -> [ %2d ]", edge_ptr->toNodeAddress->index);
+            edge_ptr = edge_ptr->nextEdge;
+        }
+        printf("\n");
+    }
 };
 
 void FreeGraph(Node* graph) {
