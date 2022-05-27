@@ -20,8 +20,8 @@ typedef struct edge {
 
 
 Node* InitializeGraph(Node*);
-void InsertVertex();
-void InsertEdge();
+void InsertVertex(Node*, int);
+void InsertEdge(Node*);
 int DFS();
 int BFS();
 void PrintGraph(Node*, int);
@@ -74,7 +74,7 @@ int main() {
             break;
         case 'e':
         case 'E':
-            InsertEdge();
+            InsertEdge(graph);
             break;
         case 'd':
         case 'D':
@@ -102,17 +102,20 @@ int main() {
     return 0;
 }
 
+
 Node* InitializeGraph(Node* graph) {
     if (graph != NULL) {
         FreeGraph(graph);
     }
 
     graph = (Node*) malloc(MAX_NODE_COUNT * sizeof(Node));
-    for (int i = 0; i < MAX_NODE_COUNT; i++)
-        graph[i].index = -1;        // node with indexed '-1' is inactive node;
+    for (int i = 0; i < MAX_NODE_COUNT; i++) {
+        graph[i].index= -1;        // node with indexed '-1' is an inactive node;
+    }
 
     return graph;
 };
+
 
 void InsertVertex(Node* graph, int index) {
     graph[index].index = index;
@@ -120,6 +123,7 @@ void InsertVertex(Node* graph, int index) {
     graph[index].firstEdge = NULL;
     printf("Vertex[%d] successfully inserted.\n", index);
 };
+
 
 void InsertEdge(Node* graph) {
     int node1, node2;
@@ -130,6 +134,7 @@ void InsertEdge(Node* graph) {
 
     printf("INPUT two nodes to be connected (0 ~ 9) : ");
     scanf("%d %d", &node1, &node2);
+    while (getchar() != '\n');
 
 
     if (((node1 < 0) || (node1 > 9)) || ((node2 < 0) || (node2 > 9))) {
@@ -152,12 +157,12 @@ void InsertEdge(Node* graph) {
     newEdge2->nextEdge = NULL;
 
 
-    if (graph[node1].firstEdge == NULL) {
+    if (graph[node1].firstEdge == NULL) {       // 처음을 먼저 확인하면 다음부턴 prev 없이 가능
         graph[node1].firstEdge = newEdge1;
     }
     else {
         ptr = graph[node1].firstEdge;
-        while (ptr != NULL) {
+        while (ptr->nextEdge != NULL) {
             if (ptr->toNodeAddress->index == node2) {
                 printf("!! The edge already exits. !!\n");
                 return;
@@ -172,20 +177,23 @@ void InsertEdge(Node* graph) {
     }
     else {
         ptr = graph[node2].firstEdge;
-        while (ptr != NULL) {
+        while (ptr->nextEdge != NULL) {
             ptr = ptr->nextEdge;
         }
         ptr->nextEdge = newEdge2;
     }
 };
 
+
 int DFS() {
 
 };
 
+
 int BFS() {
 
 };
+
 
 void PrintGraph(Node* graph, int count) {
     int i;
@@ -202,6 +210,7 @@ void PrintGraph(Node* graph, int count) {
         printf("\n");
     }
 };
+
 
 void FreeGraph(Node* graph) {
     Node* node_ptr;
