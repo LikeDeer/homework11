@@ -62,6 +62,7 @@ int main() {
         case 'z':
         case 'Z':
             graph = InitializeGraph(graph);
+            countVertices = 0;
             break;
         case 'v':
         case 'V':
@@ -90,7 +91,7 @@ int main() {
             break;
         case 'q':
         case 'Q':
-            graph = InitializeGraph(graph);
+            FreeGraph(graph);
             break;
         default:
             printf("\'%c\' is invalid command.\n", command);
@@ -136,6 +137,11 @@ void InsertEdge(Node* graph) {
     scanf("%d %d", &node1, &node2);
     while (getchar() != '\n');
 
+
+    if (node1 == node2) {
+        printf("!! Self-loop is not permitted. !!\n");
+        return;
+    }
 
     if (((node1 < 0) || (node1 > 9)) || ((node2 < 0) || (node2 > 9))) {
         printf("!! Wrong Input. Please input 2 numbers ranged 0 ~ 9. !!\n");
@@ -226,6 +232,6 @@ void FreeGraph(Node* graph) {
             edge_ptr = edge_ptr->nextEdge;
             free(edge_prev);
         }
-        free(node_ptr);
     }
+    free(graph);
 }
