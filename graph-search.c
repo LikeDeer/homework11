@@ -63,7 +63,8 @@ int main() {
     char command;
     int countVertices = 0;          // 생성된 노드의 개수 카운트
     Node* graph = NULL;             // graph : 노드 구조체 10개 배열 (InitializeGraph 참고)
-    
+
+    graph = InitializeGraph(graph);
 
     printf("[----- [정준호]  [2020069046] -----]\n");
     
@@ -87,7 +88,6 @@ int main() {
             printf("Wrong Input\n");
             continue;
         }
-
         
         switch (command) {
         case 'z':
@@ -206,7 +206,7 @@ void InsertEdge(Node* graph) {
     /* newEdge1 삽입 */
      // 노드의 첫 간선으로 삽입할 경우 : 아무 연결 없던 노드였거나, 첫 근접 간선 노드 index 가 더 클때
     if (graph[node1].firstEdge == NULL || graph[node1].firstEdge->toNodeAddress->index > node2) {           // 아무 연결 없는 노드라면, 첫 간선으로 삽입.
-        newEdge1->nextEdge = graph[node1].firstEdge;
+        newEdge1->nextEdge = graph[node1].firstEdge;        // ptr->nextEdge = NULL or 더 큰 노드를 가리키는 edge
         graph[node1].firstEdge = newEdge1;
     }
     else {
@@ -218,13 +218,13 @@ void InsertEdge(Node* graph) {
             }
             if (ptr->nextEdge == NULL)                          // (끝에 다다르면 반복문 탈출)
                 break;
-            if (ptr->nextEdge->toNodeAddress->index > node2)              // (더 큰 노드가 뒤에 있다면 탈출)
+            if (ptr->nextEdge->toNodeAddress->index > node2)              // (더 큰 노드 연결이 뒤에 있다면 탈출)
                 break;
             ptr = ptr->nextEdge;                            // (2) 다음 간선으로 이동
         } while (1);
 
-        newEdge1->nextEdge = ptr->nextEdge;
-        ptr->nextEdge = newEdge1;                           // (3) 리스트열의 끝에 삽입
+        newEdge1->nextEdge = ptr->nextEdge;                 // (3) 삽입. ptr->nextEdge = NULL or 더 큰 노드를 가리키는 edge
+        ptr->nextEdge = newEdge1;                           // 
     }
 
     /* newEdge2 삽입. newEdge1과 반대 방향 간선을 의미 */
@@ -352,7 +352,7 @@ void FreeGraph(Node* graph) {
 
     int i;
 
-    for (i = 0; i < MAX_NODE_COUNT; i++) {
+    for (i = 0; i < MAX_NODE_COUNT; i++) {      // 각 노드의 연결 리스트 삭제
         edge_ptr = graph[i].firstEdge;
         while (edge_ptr != NULL) {
             edge_prev = edge_ptr;
@@ -360,7 +360,7 @@ void FreeGraph(Node* graph) {
             free(edge_prev);
         }
     }
-    free(graph);            // 주의: 배열은 한 번에 free 하기. 배열 요소 하나하나 free 하는 것 아님!
+    free(graph);            // 노드 배열 삭제
 }
 
 
@@ -369,17 +369,16 @@ void Push(Node** stack, int* top, Node* node) {
     printf("[ %2d ] ", node->index);
 }
 
-
 Node* Pop(Node** stack, int* top) {
     return stack[(*top)--];
 }
+
 
 void enQueue(Node** queue, int* rear, Node* node) {
     *rear = (*rear + 1) % MAX_NODE_COUNT;       // 혹시나 해서 circular-queue 형태로
     queue[*rear] = node;
     printf("[ %2d ] ", node->index);
 }
-
 
 Node* deQueue(Node** queue, int* front) {
     *front = (*front + 1) % MAX_NODE_COUNT;
