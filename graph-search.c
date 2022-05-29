@@ -233,11 +233,15 @@ void InsertEdge(Node* graph) {
         graph[node2].firstEdge = newEdge2;
     }
     else {
-        ptr = graph[node2].firstEdge;           // newEdge1 을 삽입할 때, 중복 간선이 없음을 확인했으므로
-        while (ptr->nextEdge != NULL) {         //   여기선 확인할 필요 없음.
+        ptr = graph[node2].firstEdge;
+        do {
+            // newEdge1 을 삽입할 때 중복 간선이 없음을 확인했으므로, 여기서는 확인할 필요 없음.
+            if (ptr->nextEdge == NULL)      
+                break;
+            if (ptr->nextEdge->toNodeAddress->index > node1)
+                break;
             ptr = ptr->nextEdge;
-            if (ptr->nextEdge->toNodeAddress->index > node1) break;
-        }
+        } while (1);
 
         newEdge2->nextEdge = ptr->nextEdge;
         ptr->nextEdge = newEdge2;
