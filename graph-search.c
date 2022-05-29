@@ -14,8 +14,9 @@
      종류는 무방향 그래프를 선택하였고, 표현은 인접 리스트 형태이다.
      노드와 간선의 구조는 아래 참고.
      생성 방법
-      노드 : command = v 를 입력시 -> 0 ~ 9로 순차적으로 생성
-      간선 : command = e, 활성화된 노드 2개를 입력시 -> 양방향으로 간선 2개 생성
+        노드 : command = v 를 입력시 -> 0 ~ 9로 순차적으로 생성
+        간선 : command = e, 활성화된 노드 2개를 입력시 -> 양방향으로 간선 2개 생성.
+            각 노드의 간선 리스트열은 index 오름차순. DFS, BFS 에서의 간선 탐색 순서를 결정하기 위함.
      DFS, BFS 는 강의자료의 이론을 참고하여 임의로 구현했습니다. text-book을 참고하지 않은 점 양해바랍니다.
  *****************************************/
 
@@ -51,8 +52,8 @@ Node* Pop(Node**, int*);
 
 /* BFS 용 큐 관련 함수 */
  // 큐는 BFS 연산 도중 생성
-void enQueue(int*, int*, int);
-int deQueue(int*, int*);
+void enQueue(Node**, int*, Node*);
+Node* deQueue(Node**, int*);
 
 /* DFS, BFS 후 flag 다시 FALSE로 초기화 */
 void InitFlags(Node*, int);
@@ -201,14 +202,15 @@ void InsertEdge(Node* graph) {
 
 
     /* 삽입 부분 */
-     // 삽입은 해당 노드의 리스트열의 끝에 삽입되어야 함.
+     // 삽입은 해당 노드의 간선 리스트열에서 더 큰 수 앞에, 혹은 끝에 삽입 되어야 함.
     /* newEdge1 삽입 */
-    if (graph[node1].firstEdge == NULL) {
+     // 노드의 첫 간선으로 삽입할 경우 : 아무 연결 없던 노드였거나, 첫 근접 간선 노드 index 가 더 클때
+    if (graph[node1].firstEdge == NULL || graph[node1].firstEdge->toNodeAddress->index > node2) {           // 아무 연결 없는 노드라면, 첫 간선으로 삽입.
+        newEdge1->nextEdge = graph[node1].firstEdge;
         graph[node1].firstEdge = newEdge1;
     }
     else {
         ptr = graph[node1].firstEdge;                       // (0) 첫 간선으로 가서,
-
         do {
             if (ptr->toNodeAddress->index == node2) {       // (1) 이미 존재하는 간선인지 확인하고,
                 printf("!! The edge already exists. !!\n");
@@ -216,28 +218,39 @@ void InsertEdge(Node* graph) {
             }
             if (ptr->nextEdge == NULL)                          // (끝에 다다르면 반복문 탈출)
                 break;
+            if (ptr->nextEdge->toNodeAddress->index > node2)              // (더 큰 노드가 뒤에 있다면 탈출)
+                break;
             ptr = ptr->nextEdge;                            // (2) 다음 간선으로 이동
         } while (1);
 
+        newEdge1->nextEdge = ptr->nextEdge;
         ptr->nextEdge = newEdge1;                           // (3) 리스트열의 끝에 삽입
     }
+
     /* newEdge2 삽입. newEdge1과 반대 방향 간선을 의미 */
-    if (graph[node2].firstEdge == NULL) {
+    if (graph[node2].firstEdge == NULL || graph[node2].firstEdge->toNodeAddress->index > node1) {
+        newEdge2->nextEdge = graph[node2].firstEdge;
         graph[node2].firstEdge = newEdge2;
     }
     else {
         ptr = graph[node2].firstEdge;           // newEdge1 을 삽입할 때, 중복 간선이 없음을 확인했으므로
-        while (ptr->nextEdge != NULL) {         //  여기선 확인할 필요 없음.
+        while (ptr->nextEdge != NULL) {         //   여기선 확인할 필요 없음.
             ptr = ptr->nextEdge;
+            if (ptr->nextEdge->toNodeAddress->index > node1) break;
         }
+
+        newEdge2->nextEdge = ptr->nextEdge;
         ptr->nextEdge = newEdge2;
     }
+
+    printf("Edge (%d %d) successfully inserted.\n", node1, node2);
+    return;
 };
 
 
 void DFS(Node* graph) {
     int start;
-    Node* stack[10];            // 스택 : 노드 포인터의 배열
+    Node* stack[MAX_NODE_COUNT];            // 스택 : 노드 포인터의 배열
     int top = -1;
     Edge* edge_ptr;
 
@@ -279,7 +292,7 @@ void DFS(Node* graph) {
 
 void BFS(Node* graph) {
     int start;
-    Node* queue[10];
+    Node* queue[MAX_NODE_COUNT];
     int front = -1, rear = -1;
     Edge* edge_ptr;
 
@@ -293,7 +306,23 @@ void BFS(Node* graph) {
         return;
     }
 
-    
+    /* 시작 노드를 enQueue */
+    graph[start].flag = TRUE;
+    enQueue(queue, &rear, &graph[start]);
+
+    while (front != rear) {         // 큐가 빌 때 까지
+        edge_ptr = deQueue(queue, &front)->firstEdge;           //
+        while (edge_ptr != NULL) {                              //
+            if (edge_ptr->toNodeAddress->flag == FALSE) {       //
+                edge_ptr->toNodeAddress->flag = TRUE;           //
+                enQueue(queue, &rear, edge_ptr->toNodeAddress); //
+            }                                                   //
+            edge_ptr = edge_ptr->nextEdge;                      // deQueue 된 노드의 미방문 인접 노드들 enQueue
+        }
+    }
+
+    printf("\n");
+    return;
 };
 
 
@@ -341,14 +370,16 @@ Node* Pop(Node** stack, int* top) {
     return stack[(*top)--];
 }
 
-
-void enQueue(int* queue, int* rear, int key) {
-
+void enQueue(Node** queue, int* rear, Node* node) {
+    *rear = (*rear + 1) % MAX_NODE_COUNT;       // 혹시나 해서 circular-queue 형태로
+    queue[*rear] = node;
+    printf("[ %2d ] ", node->index);
 }
 
 
-int deQueue(int* queue, int* front) {
-
+Node* deQueue(Node** queue, int* front) {
+    *front = (*front + 1) % MAX_NODE_COUNT;
+    return queue[*front];
 }
 
 
